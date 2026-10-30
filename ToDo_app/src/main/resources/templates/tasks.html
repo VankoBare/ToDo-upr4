@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="bg" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Todo List</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #393939; margin: 0; padding: 24px; color: #000000; }
+        .container { max-width: 760px; margin: 0 auto; }
+        h1 { margin-top: 0; }
+        .card { background: #5c5c5c; border-radius: 10px; padding: 18px; margin-bottom: 18px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+        .stats { display: flex; gap: 12px; }
+        .stat { flex: 1; text-align: center; padding: 12px; border-radius: 8px; background: #c1c1c1; }
+        .stat strong { display: block; font-size: 26px; }
+        .stat.done { background: #69e3fa; }
+        .stat.active { background: #fff76f; }
+        label { display: block; font-weight: bold; margin: 10px 0 4px;
+        input[type=text], textarea { width: 100%; padding: 9px; border: 1px solid #393939; border-radius: 6px; font: inherit; }
+        textarea { min-height: 70px; resize: vertical; }
+        .error { color: #b91c1c; font-size: 14px; margin-top: 4px; }
+        button, .btn { display: inline-block; border: 0; border-radius: 6px; padding: 7px 12px; font-size: 14px;
+                       cursor: pointer; text-decoration: none; color: #fff; background: #4f46e5; }
+        button.green { background: #16a34a; }
+        button.orange { background: #d97706; }
+        button.red { background: #dc2626; }
+        .btn.gray { background: #6b7280; }
+        .task { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start;
+                border-left: 5px solid #f59e0b; }
+        .task.completed { border-left-color: #16a34a; background: #f0fdf4; }
+        .task.completed .title { text-decoration: line-through; color: #6b7280; }
+        .title { font-size: 18px; font-weight: bold; }
+        .desc { margin: 4px 0; color: #4b5563; white-space: pre-line; }
+        .date { font-size: 12px; color: #9ca3af; }
+        .actions { display: flex; flex-wrap: wrap; gap: 6px; }
+        .actions form { margin: 0; }
+        .empty { text-align: center; color: #9ca3af; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📝 Todo List</h1>
+
+
+    <div class="card">
+        <div class="stats">
+            <div class="stat"><strong th:text="${total}">0</strong>Общо</div>
+            <div class="stat done"><strong th:text="${completed}">0</strong>Завършени</div>
+            <div class="stat active"><strong th:text="${active}">0</strong>Незавършени</div>
+        </div>
+    </div>
+
+
+    <div class="card">
+        <h2 th:text="${editingId != null} ? 'Редактиране на задача' : 'Нова задача'">Нова задача</h2>
+        <form th:action="${editingId != null} ? @{/tasks/{id}/edit(id=${editingId})} : @{/tasks}"
+              th:object="${taskForm}" method="post">
+            <label for="title">Заглавие</label>
+            <input type="text" id="title" th:field="*{title}" placeholder="Какво трябва да се направи?">
+            <div class="error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}">Грешка</div>
+
+            <label for="description">Описание</label>
+            <textarea id="description" th:field="*{description}" placeholder="Подробности (по желание)"></textarea>
+            <div class="error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}">Грешка</div>
+
+            <p>
+                <button type="submit" th:text="${editingId != null} ? 'Запази' : 'Добави'">Добави</button>
+                <a class="btn gray" th:if="${editingId != null}" th:href="@{/tasks}">Отказ</a>
+            </p>
+        </form>
+    </div>
+
+
+    <div class="card empty" th:if="${#lists.isEmpty(tasks)}">Все още няма задачи.</div>
+
+    <div class="card task" th:each="task : ${tasks}" th:classappend="${task.completed} ? 'completed'">
+        <div>
+            <div class="title" th:text="${task.title}">Заглавие</div>
+            <div class="desc" th:if="${!#strings.isEmpty(task.description)}" th:text="${task.description}">Описание</div>
+            <div class="date" th:text="'Създадена: ' + ${#temporals.format(task.createdAt, 'dd.MM.yyyy HH:mm')}">дата</div>
+        </div>
+        <div class="actions">
+            <form th:action="@{/tasks/{id}/toggle(id=${task.id})}" method="post">
+                <button type="submit" th:class="${task.completed} ? 'orange' : 'green'"
+                        th:text="${task.completed} ? 'Активирай' : 'Завърши'">Завърши</button>
+            </form>
+            <a class="btn" th:href="@{/tasks/{id}/edit(id=${task.id})}">Редактирай</a>
+            <form th:action="@{/tasks/{id}/delete(id=${task.id})}" method="post"
+                  onsubmit="return confirm('Сигурни ли сте, че искате да изтриете задачата?');">
+                <button type="submit" class="red">Изтрий</button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>
